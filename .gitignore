@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.bak
+
+# Data and generated outputs — too large for git, regenerate via scripts
+data/
+outputs/
+outputs_cifar/
+results/
+figures/
+babylm-eval/

@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{CKA to FR} & \textbf{BLiMP} & \textbf{PPL} & \textbf{eRank growth} & \textbf{Self-CKA} \\
+\midrule
+FR & 0.9800 & 0.6338 & 46.98 & 5.98$\times$ & 1.0000 \\
+LR\_r8 & 0.0349 & 0.5563 & 456.60 & 0.65$\times$ & 0.7050 \\
+GradTrunc8 & 0.0645 & 0.5775 & 72.81 & 2.48$\times$ & 0.8499 \\
+ReLoRA\_r8 & 0.0527 & 0.4950 & 604.58 & 1.91$\times$ & 0.8839 \\
+LR\_specmatch8 & 0.0287 & 0.5325 & 438.75 & 4.73$\times$ & 0.6758 \\
+LR\_r8\_tuned & 0.0398 & 0.5200 & 138.24 & 0.62$\times$ & 0.7300 \\
+LR\_r8\_dsn\_static & 0.0313 & 0.5150 & 117.18 & 0.93$\times$ & 0.9507 \\
+LR\_r8\_dsn\_dynamic & 0.0400 & 0.5144 & 114.73 & 0.94$\times$ & 0.9556 \\
+LR\_r8\_dsn\_flat & 0.0328 & 0.4875 & 109.67 & 0.83$\times$ & 0.9496 \\
+\bottomrule
+\end{tabular}
+\caption{Raw results across all evaluated models. eRank growth is the ratio of final to initial mean gradient effective rank (attention layers); self-CKA is the mean within-run CKA between consecutive checkpoints.}
+\label{tab:raw_results}
+\end{table*}

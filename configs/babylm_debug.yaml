@@ -1,0 +1,68 @@
+# ── Rank Dynamics Pipeline Configuration ─────────────────────────────────
+# NLP config: BabyLM 2026 Strict-Small
+# Model reference: BabyLM-community/BabyLM-2026-Baseline-Strict-Small-Interaction
+# Dataset:         BabyLM-community/BabyLM-2026-Strict-Small (10M tokens)
+#
+# Training runs for 5 passes over the 10M token dataset = 50M tokens total.
+# Checkpoints are saved at fixed token counts so that divergence can be
+# localised to a token count rather than an epoch boundary.
+#
+# Comparison to vision:
+#   Vision:   20 epochs × 50K images  = 1M  image-passes
+#   Language: 5  epochs × 10M tokens  = 50M token-passes
+#   Both use dense early checkpoints to catch the t* equivalent.
+
+# ── Task ─────────────────────────────────────────────────────────────────
+task: babylm_strict_small
+output_root: outputs/babylm_strict_small
+results_dir: results/babylm_strict_small
+
+# ── Model architecture (loaded from BabyLM HF baseline) ──────────────────
+# n_layer, n_head, n_embd, vocab_size loaded from HF config.
+# Only block_size is overridden here.
+model:
+  block_size: 128
+
+# ── Token-budget training ─────────────────────────────────────────────────
+training_mode: token_budget
+token_budget: 200_000      # 5 passes × 10M tokens
+batch_size: 64
+lr: 3.0e-4
+lr_min: 1.0e-6
+warmup_tokens: 2_500_000      # 5% of 50M budget
+weight_decay: 0.1
+grad_clip: 1.0
+seeds: [0, 1, 2]
+
+# ── Checkpoint schedule (token counts) ───────────────────────────────────
+# Dense early to catch the t* equivalent in token space,
+# then at each epoch boundary (every 10M tokens), then final.
+checkpoint_tokens:
+  - 8_192
+  - 100_000
+  - 200_000
+
+# ── Rank sweep ────────────────────────────────────────────────────────────
+ranks: [8, 16, 32, 64, 128, 256]
+primary_rank: 8
+
+# ── Probing ───────────────────────────────────────────────────────────────
+probe_n_samples: 512
+probe_layers: all
+
+# ── DSN ───────────────────────────────────────────────────────────────────
+dsn_modes: [static, dynamic, flat]
+dsn_strength: 0.3
+dsn_freq_tokens: 10_000_000   # apply DSN at each epoch boundary
+
+# ── Ablation ──────────────────────────────────────────────────────────────
+ablation_k_values: [0, 1, 2, 3, 4, 11]
+ablation_finetune_tokens: 10_000_000
+ablation_convergence_tokens: 25_000_000
+
+# ── Epoch-1 intervention ─────────────────────────────────────────────────
+# Use the 10M token checkpoint as the intervention reference
+# (equivalent to epoch-1 in the vision experiment)
+intervention_checkpoint_tokens: 10_000_000
+intervention_drift_scale: 2.3     # updated after FR run
+intervention_target_alpha: 0.43   # updated after FR run

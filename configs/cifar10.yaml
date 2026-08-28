@@ -1,0 +1,41 @@
+# ── Rank Dynamics Pipeline Configuration ─────────────────────────────────
+# Reference config: CIFAR-10 vision experiment
+# Copy and modify for new setups (e.g. configs/wikitext2.yaml for NLP)
+
+# ── Task ─────────────────────────────────────────────────────────────────
+task: cifar10                  # registered task name (see task_registry.py)
+output_root: outputs/cifar10   # all run directories written here
+results_dir: results/cifar10   # collated CSVs and report written here
+
+# ── Training ──────────────────────────────────────────────────────────────
+epochs: 20
+batch_size: 128
+lr: 1.0e-3
+lr_min: 1.0e-6
+warmup_frac: 0.05
+weight_decay: 0.05
+grad_clip: 1.0
+seeds: [0, 1, 2]              # seed 0 = primary run; 1,2 = baseline seeds
+
+# ── Rank sweep ────────────────────────────────────────────────────────────
+ranks: [8, 16, 32, 64, 128]            # LR models trained for each rank
+primary_rank: 8               # rank used for all intervention/ablation stages
+
+# ── Probing ───────────────────────────────────────────────────────────────
+probe_n_samples: 512          # images/tokens for CKA probe set
+probe_layers: all             # 'all' or list of layer indices
+
+# ── DSN ───────────────────────────────────────────────────────────────────
+dsn_modes: [static, dynamic, flat]
+dsn_strength: 0.3
+dsn_freq: 1                   # apply DSN every N epochs
+
+# ── Ablation ──────────────────────────────────────────────────────────────
+ablation_k_values: [0, 1, 2, 3, 4, 9]
+ablation_finetune_epochs: 10
+ablation_convergence_epochs: 30
+ablation_finetune_lr: 1.0e-4
+
+# ── Epoch-1 intervention ──────────────────────────────────────────────────
+intervention_drift_scale: 2.3
+intervention_target_alpha: 0.43   # FR alpha at epoch 1

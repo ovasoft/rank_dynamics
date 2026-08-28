@@ -1,0 +1,326 @@
+**Extant**
+
+Low-rank models achieve lower accuracy than full-rank models. Spectral consolidation occurs 
+during full-rank training — sRank decreases as training progresses.
+Low-rank weight matrices have concentrated singular value spectra with steep power-law decay.
+Fine-tuning from a constrained initialisation does not fully recover unconstrained performance. 
+Representational similarity is higher between same-architecture models than across different constraints.
+
+---
+
+**Likely novel**
+
+The gradient eRank gap of 6.3x is constant throughout training rather than diminishing. 
+This is adjacent to gradient stiffness and intrinsic dimensionality literature but the specific 
+characterisation of a fixed absorption ceiling across all 20 epochs is not established.
+
+LR_vs_LR CKA is lower than FR_vs_FR CKA — rank-constrained models are less representationally 
+consistent across seeds than full-rank models. 
+The direction of this effect is counter-intuitive and has not been reported for rank constraints specifically.
+
+The 30-epoch fine-tune closes 52% of the gap with 48% structurally unrecoverable. 
+The quantification of the residual gap after extended full-rank fine-tuning is specific to 
+this experimental setup and is not in the compression or fine-tuning literature at this level of precision.
+
+DSN improves early functional alignment but continuous spectral correction destroys late-stage learning. 
+The concept of dynamic spectral normalisation as a training intervention does not appear 
+in the literature, so the empirical behaviour — early benefit, late conflict — is likely 
+novel even if the individual components (spectral regularisation, power-law spectra) are not.
+
+---
+
+**Novel**
+
+The functional divergence between FR and LR is a step function at t*=1, not a gradual process. 
+The precision of this claim — fully established in one epoch, barely moving across 
+the remaining 19 — combined with the triangulation across all four axes simultaneously is not in the literature.
+
+LR stabilises by exhaustion while FR stabilises by convergence. 
+The self-CKA analysis distinguishing these two mechanisms gives a new interpretive frame for 
+what representational stabilisation means under a rank constraint. 
+The observation that LR's faster stabilisation is a capacity pathology rather than an efficiency is a 
+reframing that has not been made.
+
+The spectral pre-conditioning at initialisation causally redirects the first 
+gradient update into a qualitatively different representational regime — demonstrated 
+by the epoch-1 intervention showing that the split is already complete after one update 
+and that correcting spectral shape or drift scale individually does not undo it. 
+The causal intervention design and the null result for single-axis correction are both novel.
+
+
+
+
+Now we have FR_vs_FR for both domains. Let me do the full analysis.Here is the complete 
+Aim 1 summary with everything the data says.
+
+---
+
+**O1.1 — Is divergence abrupt or gradual?**
+
+In both domains the split is **pre-existing before training begins**. 
+At the very first checkpoint — vision epoch_00 (before any gradient update), l
+anguage 8K tokens (one batch) — all LR ranks are already below the FR_vs_FR baseline. 
+The rank constraint alone, without optimisation, creates the functional separation. 
+The split does not emerge during training; it is structural.
+
+In vision the split sharpens after the first gradient update for r=8 (0.084→0.035) 
+but for higher ranks it is approximately stable or even improves slightly. 
+In language the change between the first two checkpoints is less than 0.0002 for 
+all ranks — the split is completely frozen from the start.
+
+---
+
+**O1.2 — Does divergence differ across ranks?**
+
+Yes, monotonically in both domains. Higher rank = higher CKA = less divergence. 
+The ordering is perfectly consistent: r8 < r16 < r32 < r64 < r128 < r256 at every checkpoint in both domains.
+
+---
+
+**O1.3 — Does divergence differ across domains?**
+
+Yes, in a subtle but important way. When normalised against the FR_vs_FR baseline:
+
+Vision: FR_vs_LR spans 11%–57% of FR_vs_FR at t=0. LR representations are categorically far from FR.
+
+Language: FR_vs_LR spans 34%–87% at t=0. LR representations are much closer to 
+FR relative to the baseline — but the baseline itself is very low (0.136) because 
+language representations diverge across seeds even without rank constraints. 
+The optimisation landscape for language has many viable solutions; two FR seeds end up in different ones.
+
+The additional finding here is that FR_vs_FR *decreases* over language 
+training (0.136→0.093) while it *increases* over vision training (0.736→0.785). 
+In vision, training causes representations to converge toward a shared solution. 
+In language, training causes representations to diverge into distinct solutions. 
+This is a domain-level finding independent of rank.
+
+---
+
+**O1.4 — Is magnitude consistent across ranks and domains?**
+
+The rank ordering is consistent across both domains — higher rank produces less divergence in both cases. 
+However the normalised magnitudes differ: at equivalent ranks, 
+language LR runs are closer to FR (relative to their respective baselines) than vision LR runs. 
+The constraint has a relatively weaker separating effect in language.
+
+---
+
+**Critical finding — language r=256 threshold**
+
+At r=256 and 50M tokens, FR_vs_LR = 0.0957 while FR_vs_FR = 0.0935. 
+The ratio is 1.024 — LR_r256 is fractionally *more* similar to FR than two independently 
+trained FR seeds. The rank constraint at r=256 produces no additional representational 
+divergence beyond natural training variability. The threshold rank at which LR becomes 
+indistinguishable from FR lies between r=128 (ratio=0.849, still diverged) and r=256 (ratio=1.024, within noise).
+
+Working from the actual numbers:
+
+---
+
+**O2.1 — Do FR and LR stabilise at the same checkpoint?**
+
+No, and the relationship is not random — it is governed by capacity.
+
+In vision, FR stabilises at epoch 12. LR_r128 stabilises at epoch 7 — five epochs earlier than FR. LR_r8 and LR_r16 stabilise at epochs 17–18 — later than FR. The pattern is U-shaped around FR: very low ranks take longer to stabilise because their representations keep shifting even after the model is no longer improving meaningfully, while very high ranks stabilise quickly because they have enough capacity to find a stable solution early.
+
+In language, FR stabilises at 37.5M tokens. LR_r256 stabilises at 10–30M tokens — earlier than FR. LR_r8 and LR_r16 stabilise at 40M tokens — at the same point as FR. The same U-shape is present but compressed by the sparser checkpoint schedule.
+
+---
+
+**O2.2 — Is LR stabilisation exhaustion or convergence?**
+
+In vision the answer depends critically on rank. LR_r128 is 100% convergence across all nine layers — the model has enough capacity that its representations settle into a stable solution while still close to initialisation (mean CKA-vs-init at stabilisation = 0.68). LR_r8 and LR_r16 are 100% exhaustion — representations drift to 0.13 from initialisation before step-to-step changes become small. The model has run out of representational directions to move in. LR_r32 and LR_r64 show 78–100% exhaustion, placing them on the exhaustion side of the threshold.
+
+Vision FR itself is 78% exhaustion — the deeper layers exhaust while the shallower layers show convergence. This is the O2.4 finding, discussed below.
+
+In language, every single run including FR is 100% exhaustion. FR stabilises at 37.5M tokens with CKA-vs-init of 0.46 — representations have moved more than halfway from their initialisation point before the model stops changing step-to-step. This is not a capacity ceiling in the same sense as LR — FR has full rank — but it means language training never reaches a stable convergence in the sense vision does. The optimisation landscape for language has many local optima, two independently trained models diverge (as we saw in Aim 1), and the training signal is noisy enough that representations keep reorganising until the learning rate decays to near zero.
+
+---
+
+**O2.3 — How does the stabilisation point change with rank?**
+
+In vision: higher rank stabilises earlier. r128→ep7, r64→ep11, r32→ep15, r16→ep18, r8→ep17. The relationship is monotonic except for a slight reversal between r8 and r16, which may be noise given that both are at the extreme exhaustion end. The interpretation is straightforward — higher capacity models find their representational equilibrium faster because they have more directions available during learning and reach saturation more efficiently.
+
+In language: the same direction holds. r256→15M tokens, r128→30M, r64→30M, r32→30–40M, r16→40M, r8→40M. The curve flattens at the lower end because the sparser token checkpoint schedule cannot resolve finer differences between r8 and r16.
+
+---
+
+**O2.4 — Does the mechanism differ across domains?**
+
+Yes, in a fundamental way that reflects the difference in what optimisation achieves in each domain.
+
+In vision, there is a clear layer gradient. Shallow layers (0–1) in FR show convergence — they find a stable feature representation early and stop moving. Deeper layers show exhaustion — they keep reorganising until capacity runs out. This makes representational sense: shallow visual features (edges, textures) are universal and stabilise quickly; deeper features (object parts, classes) are more data-dependent and require more reorganisation.
+
+In language, every layer in every run — including full-rank FR — shows exhaustion. There is no layer that converges in the vision sense. This reflects a structural difference: language representations are more distributed across layers, there is no clean hierarchy from low-level to high-level features, and two independently trained models never settle into the same representational geometry (as the declining FR_vs_FR in Aim 1 showed). Stabilisation in language is not convergence to a solution — it is the LR schedule decaying to the point where updates are too small to register.
+
+---
+
+**The core finding for the paper**
+
+The exhaustion/convergence distinction is not simply "LR exhausts, FR converges." At sufficient rank (r=128 in vision), LR models converge — they have enough capacity to behave like FR. Below that threshold, LR models exhaust. FR models in vision converge in their shallow layers and exhaust in their deep layers. In language, nothing converges — the label exhaustion describes every layer of every model including FR, which means the exhaustion mechanism is not a pathology of rank constraint but a property of language optimisation itself.
+
+This reframes the claim: the rank constraint does not simply impose exhaustion — it lowers the rank threshold below which exhaustion occurs. In vision that threshold is somewhere between r=64 and r=128. In language the threshold is above r=256, meaning the rank constraint is effectively always severe for the model size and token budget used here.
+
+O3.1 — Is the gradient eRank gap constant or changing?
+Vision — essentially constant. The ratio FR/LR_r8 runs 6.01 → 6.13 → 5.99 → 5.98 → 5.32 across epochs 1 to 19. Coefficient of variation is 5.5% for r=8 and 4.3% for r=16 — flat within noise. The gradient dimensionality gap is established at the first update and does not meaningfully change. The optimizer never learns to use more gradient directions despite having 20 epochs to do so.
+The one exception is r=128 in vision, which has CV=26.3% and its ratio actually increases from 1.19 to 2.38 over training. This is interesting — as r=128 stabilises early (epoch 7) and stops moving, its gradient eRank drops relative to FR which is still actively learning. The gap widens not because FR gains gradient directions but because LR_r128 loses them as it converges.
+Language — not constant, and the pattern is informative. The ratio for r=8 rises from 14.3 at 32K tokens to 45.9 at 40M tokens then falls slightly. CV is 32%. The ratio is not constant — it grows substantially over the first 40M tokens. But the direction of the change matters: the ratio increases because FR's gradient eRank grows (306 → 510) while LR's stays flat (21 → 11). FR discovers more gradient directions as it learns; LR cannot. The gap is not static — it widens as training progresses, which means LR falls further behind FR's gradient richness the longer training continues.
+O3.2 — How does the ratio scale with rank?
+Vision final: r8=5.32, r16=3.00, r32=1.89, r64=1.37, r128=2.38 (anomalously high due to the convergence effect above). Ignoring r128, the ratio scales roughly as FR_eRank/rank — FR_eRank at final is 152, so expected ratios are 19, 9.5, 4.8, 2.4. Actual ratios are 5.3, 3.0, 1.9, 1.4 — consistently lower than the structural expectation. This means the rank constraint does not fully translate to a proportional gradient gap; the optimizer partially compensates, especially at higher ranks.
+Language final: r8=42.3, r16=20.6, r32=10.1, r64=5.3, r128=2.9, r256=1.75. Expected ratios from FR_eRank=607: 76, 38, 19, 9.5, 4.7, 2.4. Again actual ratios are lower than expected, but the scaling relationship is cleaner — roughly doubling the rank halves the ratio throughout.
+O3.3 — Does it replicate across domains?
+Partially. The direction is the same in both — higher rank reduces the gradient eRank gap. But the mechanism differs. In vision the ratio is approximately constant over training (the gap is established early and stays). In language the ratio grows over training because FR's gradient eRank increases while LR's cannot. The constraint is more dynamically damaging in language: the longer training runs, the further LR falls behind FR's gradient richness.
+
+The interpretation for the paper:
+O3.1 — Vision shows a near-constant ratio (CV 2–7% for r=8, 16, 32) confirming the gap is established at the first update and the optimizer never compensates. Language shows a growing ratio (CV 17–32%) — not because LR loses gradient directions but because FR gains them as training progresses. The rank constraint is more dynamically damaging in language: the longer training runs, the further LR falls behind.
+O3.2 — In both domains doubling the rank roughly halves the ratio, but actual ratios are consistently lower than the structural prediction (FR_eRank / r). The optimizer partially compensates at higher ranks. In language the ratios are 6–8× larger than equivalent vision ranks — gradient dimensionality is far more constrained in language even at the same nominal rank.
+O3.3 — The direction replicates but the mechanism differs. Vision: gap is static, established immediately. Language: gap is dynamic, widens with training. This domain difference is the cross-domain finding.
+
+
+Interpretation of the complete Aim 4:
+O4.1 — Confirmed in both domains. Spectral correction at t* causally improves alignment. Alpha_flat alone is more effective than the combined intervention, which means drift scaling adds noise rather than signal. The spectral geometry at initialisation is the primary causal factor, not the drift magnitude.
+O4.2 — A clean negative result, consistent across both domains. DSN dramatically improves task performance (vision +59–61%, language -75–77% perplexity) but the final CKA vs FR is at or below the untreated LR baseline. This reveals a dissociation: better task performance does not mean more FR-like representations. The spectral correction helps learning efficiency — the model finds better optima — but gradient flow overwrites the initialisation geometry within a few updates, and the ongoing gradient eRank gap (Aim 3) prevents the model from maintaining FR-like representational trajectories.
+Panel D visualises this dissociation directly — the scatter of (final CKA, normalised metric) shows DSN modes moving upward (better metric) but not rightward (more FR-like). The claim for the paper is: spectral geometry at init is causally relevant for the initial split, but not sufficient to close the representational gap through training. The gradient dimensionality constraint identified in Aim 3 is the deeper mechanism.
+
+Aim 5 substantiates Claims 1 and 3 functionally. The normalised gap scaling with rank in both domains confirms that the gradient eRank constraint (Aim 3) has direct performance consequences — more gradient directions means better task performance. The language gaps being 15× larger than vision at equivalent ranks (r=8: 8.72 vs 0.59) explains why rank constraint is so catastrophic in language: the optimisation problem is simply harder and needs more gradient dimensionality. The vision r=128 anomaly (worse than r=64) is worth a footnote — it suggests overfitting at higher rank with only 50K images, which does not appear in language because the token budget is larger.
+Aim 6 substantiates Claim 1 structurally. The persistent residual gap — 51% unrecovered in vision even after reinitialising all blocks and fine-tuning, 58% unrecovered in language with full budget — confirms the split identified in Aim 1 is not merely functional but positional in parameter space. The k-sweep finding adds nuance: vision recovery is non-monotonic (only k=9 helps substantially, suggesting all-or-nothing layer dependence), while language recovery is smooth and monotonic (each additional reinitialised block helps linearly). This cross-domain difference in recoverability structure mirrors the cross-domain difference in stabilisation mechanism found in Aim 2 — vision layers are more interdependent, language layers are more modular.
+
+
+
+
+
+\section{Discussion}
+\label{sec:discussion}
+
+Together, our six aims support a coherent mechanistic interpretation of
+low-rank pretraining in language models. We synthesise that interpretation,
+examine its theoretical implications, and discuss what the domain differences
+reveal. Limitations of this work are discussed in \S\ref{sec:limitations}.
+
+\subsection{A Two-Phase Mechanistic Account}
+
+The central question motivating this paper is not whether low-rank pretraining
+hurts performance --- that is well established --- but \emph{why} the damage
+is so difficult to prevent or repair. Our results point to three interdependent
+causes operating at different stages of training.
+
+\paragraph{The split is structural, not learned.}
+Figure~\ref{fig:aim1_language} shows that the representational divergence
+between FR and LR language models is present at the very first checkpoint
+(8K tokens), before substantial learning has occurred. The CKA gap changes
+by less than $0.001$ between the first and second checkpoints, making a
+purely transient initialisation-only effect unlikely. Figure~\ref{fig:aim4_intervention}
+provides evidence for what drives this: the rank constraint imposes a
+low-entropy singular value distribution on LR weight matrices at
+initialisation, and correcting that geometry at $t^*$ via alpha-flattening
+closes 288\% of the CKA gap in language and reduces perplexity by 62\%.
+This single-point intervention outperforms all training-phase corrections
+tested, supporting the hypothesis that spectral geometry at initialisation
+is a major contributor to the early split. Vision results in
+Appendix~\ref{app:aim1_vision} replicate this pattern at epoch~0.
+
+\paragraph{Gradient starvation sustains the split.}
+Even when spectral geometry is corrected at initialisation, alignment gains
+are not sustained. Figure~\ref{fig:aim3_ratio} shows that LR models operate
+in a persistently reduced optimisation subspace throughout training --- one
+that grows relative to FR in language, as FR training continues to expand
+its effective gradient dimensionality while LR's remains bounded by the
+rank constraint. Figure~\ref{fig:aim4_dsn} shows the consequence: all three
+DSN modes reduce perplexity substantially relative to untreated LR, but none
+improve final FR--LR CKA above the untreated LR baseline. The corrected
+spectrum is overwritten by gradient flow within a few updates, and gradient
+starvation persists underneath.
+
+Together, Aims~3 and~4 point to a two-phase mechanism: \emph{spectral
+geometry at initialisation drives the initial split; gradient starvation
+sustains it throughout training.} Correcting either alone is insufficient.
+
+\paragraph{Post-hoc recovery is partial.}
+Figure~\ref{fig:aim6_ksweep} shows that even reinitialising all layers and
+fine-tuning leaves approximately half the gap unrecovered in both domains.
+Two recovery profiles emerge. In language, recovery increases monotonically
+with $k$: each additional reinitialised block contributes incrementally,
+matching the layer-uniform internal representation structure visible in
+Figure~\ref{fig:aim1_language}. In vision, recovery is all-or-nothing:
+substantial improvement appears only when all blocks are reinitialised,
+matching the layer-graded profiles in Appendix~\ref{app:aim1_vision}. In
+both domains, LR pretraining appears to arrive at solutions from which
+FR-like representations are not fully reachable via gradient descent within
+practical budgets.
+
+\subsection{The Dissociation of Performance and Alignment}
+
+The most theoretically significant finding in this paper is the dissociation
+in Figure~\ref{fig:aim4_dsn}: \emph{optimisation success and representational
+similarity to FR are separable phenomena}.
+
+DSN substantially improves task performance without improving representational
+alignment with FR. Figure~\ref{fig:aim4_scatter} makes this visible directly:
+DSN conditions cluster in the high-performance, low-alignment region ---
+better perplexity at essentially unchanged CKA relative to untreated LR.
+The interventions enable the LR model to find better solutions within its
+constrained optimisation capacity, but those solutions are no more similar
+to the FR solution than the untreated LR baseline.
+
+This dissociation indicates that existing evaluations of low-rank pretraining,
+which are almost entirely performance-based \citep{lialin2023relora,
+zhao2024galore, wei2024investigating}, may systematically underestimate the
+representational cost of the rank constraint. A model can achieve low
+perplexity while occupying a representational organisation substantially
+different from a full-rank model. If downstream tasks rely on the structure
+of learned representations --- as in transfer learning
+\citep{aghajanyan2021intrinsic}, probing \citep{diehl2024stability}, and
+interpretability research --- performance-based evaluations alone are
+insufficient. Closing the performance gap and closing the representational
+gap are distinct targets, likely requiring distinct interventions.
+
+\subsection{What the Domain Differences Reveal}
+
+The systematic differences between language and vision are informative about
+the structure of each domain's optimisation landscape, and qualify where our
+mechanistic account is most strongly supported.
+
+\paragraph{Language pretraining has a more diffuse optimisation landscape.}
+Figure~\ref{fig:aim1_language} shows that two independently trained FR
+language models diverge in representation space over training, while FR
+vision seeds converge (Appendix~\ref{app:aim1_vision}). Alongside the
+universal exhaustion-type stabilisation in language
+(Appendix~\ref{app:stabilisation}), this is consistent with the view that
+language pretraining at this scale produces many locally adequate solutions
+that are geometrically distant from each other. The rank constraint amplifies
+a divergence that is already latent in language pretraining itself, rather
+than introducing a qualitatively new failure mode. This domain difference also
+means our findings are strongest as characterisations of language-specific
+dynamics and should be interpreted cautiously as general claims about
+transformer pretraining.
+
+\paragraph{Gradient starvation escalates in language.}
+Figure~\ref{fig:aim3_ratio} shows that the gradient eRank ratio grows
+throughout language training but remains stable in vision. In language, FR
+training continues to expand its effective gradient dimensionality over the
+full training run, making the relative cost of the rank constraint escalate
+over time. This finding may have practical implications for long-schedule
+low-rank language model pretraining: the longer training continues, the
+further the LR model falls behind its full-rank counterpart in gradient
+diversity --- an escalating penalty rather than a fixed one.
+
+\paragraph{Performance scaling tracks gradient dimensionality scaling.}
+The performance gap $\delta_r$ in Appendix~\ref{app:perf_gap} decreases with
+rank at approximately the same rate as the gradient eRank ratio in
+Figure~\ref{fig:aim3_ratio}: doubling rank approximately halves both. This
+parallel scaling is consistent with the view that gradient dimensionality is
+an important mediator of the performance gap, and accords with the theoretical
+lower bound of \citet{godey2024softmax} relating model capacity to achievable
+loss in language modelling. We note that parallel scaling between two
+empirical curves does not establish a causal link; both could reflect a
+common underlying constraint rather than a direct relationship.
+
+\paragraph{Synthesis.}
+Taken together, our findings suggest that low-rank pretraining changes not
+only the efficiency of optimisation but the geometry of the representations
+that optimisation discovers. Efficient pretraining methods may therefore
+need to jointly preserve gradient diversity and representational structure,
+rather than targeting task performance alone. Whether this requires
+architectural changes, richer initialisation strategies, or interventions
+that directly maintain gradient dimensionality during training are questions
+we leave to future work.
