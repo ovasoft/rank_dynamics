@@ -2,8 +2,8 @@
 generate_step0_checkpoints.py — Generate step-0 (pre-training) checkpoints
 for FR and all LR ranks WITHOUT re-running training.
 
-This addresses R1-W2, R2-W2, R4-Q1: "Can you report language FR-LR CKA at
-a zero-update checkpoint (before any gradient step)?"
+Used to report language FR-LR CKA at a zero-update checkpoint (before
+any gradient step).
 
 The key insight: at step 0, the model weights are determined entirely by
 the random seed and the initialization scheme (nn.init.normal_ for
@@ -16,7 +16,7 @@ LowRankLinear A and B). We can reproduce this exactly by:
 This is mathematically identical to saving at step 0 during training.
 
 Usage:
-    python generate_step0_checkpoints.py \\
+    python probing/generate_step0_checkpoints.py \\
         --config configs/babylm_strict_small.yaml \\
         --seeds 0 1
 
@@ -29,7 +29,7 @@ Then run probe_dynamics.py as normal — it will pick up tokens_0000000000
 as the first checkpoint in the sort order.
 
 To get CKA at step 0, run:
-    python probe_dynamics.py \\
+    python probing/probe_dynamics.py \\
         --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/FR_seed0 \\
         --ref_run_dir outputs/babylm_strict_small/LR_r8_seed0
@@ -37,6 +37,10 @@ To get CKA at step 0, run:
 Or use probe_step0_cka.py (simpler, single-purpose) which this script
 also supports via --probe flag.
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse, copy, math, torch, random
 import torch.nn as nn
@@ -130,7 +134,7 @@ def main(args):
 def _run_step0_cka(cfg, ranks, seeds):
     """
     Compute FR-LR CKA at step 0 across all ranks and seeds.
-    Prints a summary table directly — the key number for the rebuttal.
+    Prints a summary table directly.
     """
     from probe_dynamics import make_probe_loader, get_hidden_states, linear_cka
 
@@ -214,7 +218,7 @@ def _run_step0_cka(cfg, ranks, seeds):
             print(f"  LR_r{r:<5} seed={seed}  FR-LR CKA = {mean_cka:.4f}"
                   f"  (FR-FR = {fr_fr_cka:.4f})")
 
-    print("\nDone. These step-0 CKA values answer reviewer Q1 directly.")
+    print("\nDone.")
     print("Key question: is FR-LR CKA at step 0 already below FR-FR baseline?")
     print("If yes → split is due to initialization statistics, not gradient dynamics.")
 

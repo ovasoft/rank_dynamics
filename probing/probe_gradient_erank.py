@@ -2,8 +2,8 @@
 probe_gradient_erank.py — Compute TRUE gradient effective rank from actual
 gradients (not weight-diff approximations) for existing checkpoints.
 
-This addresses R1-W6/Q3 (gradient eRank under DSN) and R4-W3/R3-W5
-(SVD distribution shapes for FR vs LR).
+Used for gradient eRank under DSN and for SVD distribution shapes of FR
+vs LR gradients.
 
 For each checkpoint in a run:
   1. Load model weights.
@@ -17,28 +17,32 @@ Outputs:
 
 Usage:
     # FR run
-    python probe_gradient_erank.py \\
+    python probing/probe_gradient_erank.py \\
         --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/FR
 
     # LR run
-    python probe_gradient_erank.py \\
+    python probing/probe_gradient_erank.py \\
         --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/LR_r8
 
     # DSN run (same command — works on any checkpoint directory)
-    python probe_gradient_erank.py \\
+    python probing/probe_gradient_erank.py \\
         --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/DSN_static_r8
 
     # Vision
-    python probe_gradient_erank.py \\
+    python probing/probe_gradient_erank.py \\
         --config configs/cifar10.yaml \\
         --run_dir outputs/cifar10/FR
 
 After running on FR, LR, and all DSN variants, collate with:
-    python collate_grad_erank.py --config configs/babylm_strict_small.yaml
+    python analysis/collate_grad_erank.py --config configs/babylm_strict_small.yaml
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, argparse, csv
 import torch

@@ -1,8 +1,8 @@
 """
-train_relora.py — ReLoRA comparison for R2-W1 (Reviewer 2, Weakness 1).
+train_relora.py — ReLoRA comparison: periodically expanding the update
+subspace under a fixed weight rank (paper §3.4).
 
-R2-W1's second suggested discriminating test: "use methods that
-periodically expand the update subspace, or use ReLoRA." ReLoRA (Lialin
+ReLoRA (Lialin
 et al. 2024) trains a low-rank adapter on top of a base weight,
 periodically MERGES the adapter into the base and reinitialises a fresh
 adapter — recovering full-rank expressivity across many merge cycles
@@ -12,7 +12,7 @@ slows exhaustion-type stabilization relative to static LR_r8, that is a
 second, independent line of evidence for gradient-subspace restriction
 as the operative mechanism (rather than the static weight factorization
 per se) — and, since it's an intervention rather than a passive
-correlation, it also speaks to R1-W2's causality concern.
+correlation, it is causal rather than correlational evidence.
 
 Uses HuggingFace `peft` (pip install peft) for the LoRA layer
 implementation and merge_and_unload() — the adapter math and merge
@@ -29,9 +29,13 @@ Reuses:
 
 Usage:
     pip install peft
-    python train_relora.py --config configs/babylm_strict_small.yaml \\
+    python src/train_relora.py --config configs/babylm_strict_small.yaml \\
         --rank 8 --merge_every_tokens 5000000
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, copy, time, csv, argparse, random
 import torch

@@ -1,5 +1,8 @@
 """
-train_cifar_dsn.py — Low-rank ViT training with Dynamic Spectral Normalisation (DSN).
+train_dsn.py — Low-rank training with Dynamic Spectral Normalisation (DSN).
+
+Works for any registered task: epoch mode (vision) or token-budget mode
+(language), selected by the config.
 
 After each optimiser step, the singular value spectrum of every LowRankLinear
 weight matrix is re-projected to maintain a target power-law exponent (alpha),
@@ -22,20 +25,24 @@ Three DSN variants are trained:
                 (loaded from fr_spectral.csv produced by collate_results.py)
   dsn_flat:     target alpha = 0 (fully flat spectrum, all SVs equal — orthogonal init)
 
-All variants save checkpoints in the same format as train_cifar.py, so
+All variants save checkpoints in the same format as train.py, so
 probe_dynamics.py can be run on them without modification.
 
 Usage:
     # Static DSN
-    python train_cifar_dsn.py --dataset cifar10 --rank 8 --dsn_mode static
+    python src/train_dsn.py --dataset cifar10 --rank 8 --dsn_mode static
 
     # Dynamic DSN (requires FR spectral CSV)
-    python train_cifar_dsn.py --dataset cifar10 --rank 8 --dsn_mode dynamic \
+    python src/train_dsn.py --dataset cifar10 --rank 8 --dsn_mode dynamic \
         --fr_spectral results/cifar10/summary_spectral.csv
 
     # Flat (orthogonal) DSN
-    python train_cifar_dsn.py --dataset cifar10 --rank 8 --dsn_mode flat
+    python src/train_dsn.py --dataset cifar10 --rank 8 --dsn_mode flat
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, time, argparse, csv, copy, random
 import torch

@@ -6,8 +6,8 @@ Mirrors summarize_grad_erank.py's design: a small, reliably-pasteable
 summary instead of sharing a full CSV.
 
 Usage:
-    python summarize_mutual_knn.py outputs/babylm_strict_small/LR_r8
-    python summarize_mutual_knn.py outputs/babylm_strict_small/GradTrunc8 --k 10
+    python analysis/summarize_mutual_knn.py outputs/babylm_strict_small/LR_r8
+    python analysis/summarize_mutual_knn.py outputs/babylm_strict_small/GradTrunc8 --k 10
 """
 
 import os, sys, argparse

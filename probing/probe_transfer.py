@@ -2,8 +2,8 @@
 probe_transfer.py — BLiMP minimal-pair evaluation for downstream/functional
 comparison across FR, untreated LR, and DSN-treated LR checkpoints.
 
-Addresses R2-W3 and R3-W1: the paper's CKA-based "representational cost"
-claim needs a functional/behavioural check, not just a geometry metric.
+Paper Appendix J.2: the CKA-based "representational cost" claim needs a
+functional/behavioural check, not just a geometry metric.
 BLiMP (Warstadt et al. 2020) gives 67 grammatical-phenomenon paradigms of
 minimal sentence pairs (sentence_good vs sentence_bad); a competent LM
 should assign higher log-likelihood to sentence_good.
@@ -24,11 +24,11 @@ this script is evaluation-only.
 
 Usage:
     # Single run
-    python probe_transfer.py --config configs/babylm_strict_small.yaml \\
+    python probing/probe_transfer.py --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/FR --checkpoint final
 
     # Compare a set of runs in one pass (writes one combined CSV)
-    python probe_transfer.py --config configs/babylm_strict_small.yaml \\
+    python probing/probe_transfer.py --config configs/babylm_strict_small.yaml \\
         --run_dirs outputs/babylm_strict_small/FR \\
                    outputs/babylm_strict_small/LR_r8 \\
                    outputs/babylm_strict_small/LR_r8_dsn_static \\
@@ -41,6 +41,10 @@ Output:
     <results_dir>/blimp_summary.csv       — per-run overall accuracy
 """
 
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
+
 import os, math, argparse, csv
 import torch
 import torch.nn.functional as F
@@ -49,8 +53,7 @@ from task_registry import load_config, get_task, _load_babylm_config_and_tokeniz
 from probe_dynamics import load_model_from_checkpoint
 
 # A representative, phenomenon-diverse subset of BLiMP's 67 paradigms.
-# Kept small deliberately: each paradigm is ~1000 pairs and rebuttal time
-# is limited. Pass --phenomena to override with a custom list, or
+# Kept small deliberately: each paradigm is ~1000 pairs. Pass --phenomena to override with a custom list, or
 # --all_phenomena to run the full BLiMP suite.
 DEFAULT_PHENOMENA = [
     "anaphor_gender_agreement",

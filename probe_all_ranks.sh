@@ -10,6 +10,10 @@
 
 set -euo pipefail
 
+# Run from the repo root and make src/, probing/ and analysis/ importable.
+cd "$(dirname "${BASH_SOURCE[0]}")"
+export PYTHONPATH="$PWD/src:$PWD/src/vision:$PWD/probing:$PWD/analysis${PYTHONPATH:+:$PYTHONPATH}"
+
 CONFIG="${1:?Usage: bash probe_all_ranks.sh <config.yaml>}"
 
 # Read output_root from config
@@ -58,7 +62,7 @@ for run_name in "${RANKS[@]}"; do
     fi
 
     echo "══ Probing $run_name ══════════════════════════════════════"
-    python3 probe_dynamics.py \
+    python3 probing/probe_dynamics.py \
         --config   "$CONFIG" \
         --run_dir  "$run_dir" \
         --ref_run_dir "$FR_DIR"

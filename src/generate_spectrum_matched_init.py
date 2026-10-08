@@ -1,11 +1,9 @@
 """
 generate_spectrum_matched_init.py — Spectrum-matched low-rank initialization
-control for R2-W2.
+control (paper §3.2, §4.3 O4.3).
 
-R2-W2: "The early representational split may be an initialization or
-spectral-scaling artifact... low-rank factorization changes the initial
-singular spectrum and scale of the effective matrices... Stronger controls
-would include spectrum-matched low-rank initializations."
+Tests whether the early representational split is an initialization or
+spectral-scaling artifact of the low-rank factorization.
 
 task_registry.LowRankLinear's default init (independent nn.init.normal_ on
 A and B, std=1/sqrt(rank)) produces a very different singular-value
@@ -60,12 +58,16 @@ verify_spectrum_match() checks the construction directly in-memory rather
 than depending on round-tripping through those scripts.
 
 Usage:
-    python generate_spectrum_matched_init.py \\
+    python src/generate_spectrum_matched_init.py \\
         --config configs/babylm_strict_small.yaml \\
-        --fr_reference_ckpt outputs/babylm_strict_small/FR/checkpoints/tokens_0000008192/model.pt \\
+        --fr_reference_ckpt outputs/babylm_strict_small/FR/checkpoints/tokens_0000000000/model.pt \\
         --rank 8 \\
         --run_dir outputs/babylm_strict_small/LR_specmatch8
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import torch
@@ -195,7 +197,7 @@ def main(args):
          f"{run_dir}/checkpoints/{ckpt_name}")
     print("\nNext steps:")
     print(f"  1. Probe this checkpoint's CKA against FR at step 0:")
-    print(f"     python probe_dynamics.py --config {args.config} \\")
+    print(f"     python probing/probe_dynamics.py --config {args.config} \\")
     print(f"         --run_dir {run_dir} --ref_run_dir <FR run dir>")
     print(f"  2. If a full trajectory (not just step 0) is needed, continue "
          f"training this checkpoint under the normal LR schedule.")

@@ -12,11 +12,15 @@ Protocol:
 Supports both vision (ViT/CIFAR) and language (GPT-2/BabyLM) via task_registry.
 
 Usage:
-    python ablate_early_layers.py --config configs/cifar10.yaml
-    python ablate_early_layers.py --config configs/babylm_strict_small.yaml \
+    python src/ablate_early_layers.py --config configs/cifar10.yaml
+    python src/ablate_early_layers.py --config configs/babylm_strict_small.yaml \
         --lr_run_dir outputs/babylm_strict_small/LR_r8 \
         --out_dir outputs/babylm_strict_small/ablation
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, argparse, csv, copy
 import torch

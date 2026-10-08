@@ -13,11 +13,15 @@ All four variants train for exactly one epoch from the same random seed.
 FR model is loaded from its epoch-1 checkpoint for CKA reference.
 
 Usage:
-    python epoch1_intervention.py \
+    python src/epoch1_intervention.py \
         --dataset cifar10 \
         --fr_ckpt  outputs_cifar/cifar10/FR/checkpoints/epoch_00/model.pt \
         --out_dir  outputs_cifar/cifar10/interventions
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, argparse, csv, copy, importlib.util, random
 import torch
@@ -42,7 +46,7 @@ N_PROBE     = 512       # number of images for CKA probe set
 def load_tc():
     spec = importlib.util.spec_from_file_location(
         "train_cifar",
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_cifar.py")
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "vision", "train_cifar.py")
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -306,8 +310,10 @@ def main(args):
     }
 
     # ── Results storage ───────────────────────────────────────────────
+    # Written as *.partial and renamed on completion, so an interrupted run
+    # never leaves a file that run_pipeline.sh would mistake for done.
     results_path = os.path.join(args.out_dir, 'epoch1_intervention.csv')
-    f_out        = open(results_path, 'w', newline='')
+    f_out        = open(results_path + '.partial', 'w', newline='')
     writer       = csv.writer(f_out)
     writer.writerow(['variant', 'val_acc', 'rel_drift',
                      'cka_L0', 'cka_L1', 'cka_L2', 'cka_L3',
@@ -351,6 +357,7 @@ def main(args):
               f'{cka_vals[8]:>8.4f} {mean_cka:>10.4f}')
 
     f_out.close()
+    os.replace(results_path + '.partial', results_path)
     print(f'\nFR reference:')
     fr_cka_self = [1.0] * 9   # FR vs itself is 1.0 by definition
     print(f'  FR t* metric={fr_metric:.4f}  (checkpoint: {args.fr_ckpt})')
@@ -374,8 +381,13 @@ if __name__ == '__main__':
             out_root = cfg.get('output_root', 'outputs')
             if args.dataset is None: args.dataset = cfg.get('task', 'cifar10')
             if args.fr_ckpt is None:
+                # Token-budget runs name checkpoints tokens_XXXXXXXXXX; epoch
+                # runs name them epoch_XX. Use the configured t* in either case.
+                iv_tokens = cfg.get('intervention_checkpoint_tokens')
+                ckpt_name = (f'tokens_{int(iv_tokens):010d}' if iv_tokens
+                             else 'epoch_00')
                 args.fr_ckpt = os.path.join(
-                    out_root, 'FR', 'checkpoints', 'epoch_00', 'model.pt')
+                    out_root, 'FR', 'checkpoints', ckpt_name, 'model.pt')
             if args.out_dir is None:
                 args.out_dir = os.path.join(out_root, 'interventions')
             # Override intervention constants from config

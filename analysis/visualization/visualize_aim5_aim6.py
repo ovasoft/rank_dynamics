@@ -8,8 +8,8 @@ Outputs:
   figures/aim6b_residual_gap.png         — Residual gap after fine-tuning, both domains
 
 Usage:
-    python visualize_aim5_aim6.py
-    python visualize_aim5_aim6.py \
+    python analysis/visualization/visualize_aim5_aim6.py
+    python analysis/visualization/visualize_aim5_aim6.py \
         --aim5  results/cross_domain/aim5_performance_gap_combined.csv \
         --aim6v results/cifar10/aim6_recovery_cifar10.csv \
         --aim6l results/babylm_strict_small/aim6_recovery_babylm_strict_small.csv \

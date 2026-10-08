@@ -1,14 +1,14 @@
 """
 combine_blimp_cka_table.py — Join BLiMP accuracy (from probe_transfer.py's
 blimp_summary.csv) with final CKA-vs-FR (from each run's cka_cross.csv)
-into a single table, for R2-W3 / R3-W1: does lower CKA correlate with
+into a single table (paper Table 5): does lower CKA correlate with
 lower functional (downstream task) performance?
 
 Reuses:
   - load_run_cka                  (analyze_cka_comparison.py)
 
 Usage:
-    python combine_blimp_cka_table.py \\
+    python analysis/combine_blimp_cka_table.py \\
         --blimp_summary results/babylm_strict_small/blimp_summary.csv \\
         --run FR=outputs/babylm_strict_small/FR \\
         --run LR_r8=outputs/babylm_strict_small/LR_r8 \\
@@ -25,6 +25,10 @@ Usage:
 The blimp_summary.csv 'run' column must match the --run NAME you pass here
 (i.e. the run directory's basename, as produced by probe_transfer.py).
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import pandas as pd
@@ -210,7 +214,7 @@ if __name__ == '__main__':
                       "column in blimp_summary.csv")
     p.add_argument('--fr_fr_baseline', default=None,
                   help='Run dir of a second FR seed for the FR-FR baseline '
-                      '(enables the "% of FR-FR baseline" column)')
+                      '(enables the "%% of FR-FR baseline" column)')
     p.add_argument('--out', default='combined_blimp_cka.md')
     p.add_argument('--exclude_from_corr', nargs='*', default=None,
                   help="Run names to exclude from correlation computation "

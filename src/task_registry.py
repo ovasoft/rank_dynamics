@@ -235,7 +235,7 @@ def make_model_cifar(cfg):
     import importlib.util, os
     spec = importlib.util.spec_from_file_location(
         "train_cifar",
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_cifar.py")
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "vision", "train_cifar.py")
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)

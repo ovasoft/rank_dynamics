@@ -8,8 +8,8 @@ Outputs:
   figures/aim2d_layer_profile.png    — Per-layer mechanism and stab checkpoint (vision)
 
 Usage:
-    python visualize_aim2.py
-    python visualize_aim2.py \
+    python analysis/visualization/visualize_aim2.py
+    python analysis/visualization/visualize_aim2.py \
         --vision results/cifar10/aim2_stabilisation_cifar10.csv \
         --language results/babylm_strict_small/aim2_stabilisation_babylm_strict_small.csv \
         --out figures/

@@ -17,13 +17,17 @@ Results written to:
 
 Usage:
     # Single run (within-run CKA only)
-    python probe_dynamics.py --run_dir outputs_cifar/cifar10/LR_r8 --dataset cifar10
+    python probing/probe_dynamics.py --run_dir outputs_cifar/cifar10/LR_r8 --dataset cifar10
 
     # Cross-run CKA (FR vs LR)
-    python probe_dynamics.py --run_dir outputs_cifar/cifar10/LR_r8 \\
+    python probing/probe_dynamics.py --run_dir outputs_cifar/cifar10/LR_r8 \\
                              --ref_run_dir outputs_cifar/cifar10/FR \\
                              --dataset cifar10
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, argparse, csv
 import torch
@@ -145,7 +149,7 @@ def build_vit(n_classes, img_size, in_channels):
     import importlib.util, sys
     spec = importlib.util.spec_from_file_location(
         "train_cifar",
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_cifar.py")
+        os.path.join(_ROOT, "src", "vision", "train_cifar.py")
     )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -406,8 +410,13 @@ def probe_run(args):
     )
 
     # ── CSV writers ──
+    # Written as *.csv.partial and renamed on completion, so an interrupted
+    # run never leaves a file that run_pipeline.sh would mistake for done.
+    def _partial(name):
+        return os.path.join(probe_dir, name + ".partial")
+
     # Weight probes
-    wp_file   = open(os.path.join(probe_dir, "probes.csv"), "w", newline="")
+    wp_file   = open(_partial("probes.csv"), "w", newline="")
     wp_writer = csv.writer(wp_file)
     wp_writer.writerow([
         "epoch", "weight_name",
@@ -419,14 +428,14 @@ def probe_run(args):
     ])
 
     # Within-run CKA (consecutive epochs)
-    cka_self_file   = open(os.path.join(probe_dir, "cka_self.csv"), "w", newline="")
+    cka_self_file   = open(_partial("cka_self.csv"), "w", newline="")
     cka_self_writer = csv.writer(cka_self_file)
     cka_self_writer.writerow(["epoch", "layer", "cka_vs_prev", "cka_vs_epoch0", "checkpoint_name"])
 
     # Cross-run CKA (this run vs reference)
     cka_cross_file, cka_cross_writer = None, None
     if ref_ckpt_dir:
-        cka_cross_file   = open(os.path.join(probe_dir, "cka_cross.csv"), "w", newline="")
+        cka_cross_file   = open(_partial("cka_cross.csv"), "w", newline="")
         cka_cross_writer = csv.writer(cka_cross_file)
         cka_cross_writer.writerow(["epoch", "layer", "cka_vs_ref", "checkpoint_name"])
 
@@ -576,6 +585,9 @@ def probe_run(args):
     cka_self_file.close()
     if cka_cross_file:
         cka_cross_file.close()
+    for f in [wp_file, cka_self_file, cka_cross_file]:
+        if f:
+            os.replace(f.name, f.name[:-len(".partial")])
 
     print(f"\nDone.")
     print(f"  Weight probes : {probe_dir}/probes.csv")

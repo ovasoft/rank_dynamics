@@ -3,7 +3,7 @@ analyze_cka_comparison.py — Compare cross-run CKA-vs-FR trajectories across
 an arbitrary named set of runs (LR_r8, GaLore, ReLoRA, DSN variants, ...).
 
 This is the CKA counterpart to analyze_grad_erank_approx.py. Question it
-answers for R2-W1: does GaLore/ReLoRA show the same early representational
+answers: does GaLore/ReLoRA show the same early representational
 split and low, flat CKA-vs-FR trajectory the paper reports for LR_r8 (Aim
 1's "split exists before meaningful learning" finding), or does either
 method's periodic subspace rotation let it track FR more closely in
@@ -24,7 +24,7 @@ Prerequisite: each run_dir must already have probes/cka_cross.csv, i.e.
 probe_dynamics.py must have been run for it with --ref_run_dir <FR_dir>.
 
 Usage:
-    python analyze_cka_comparison.py --config configs/babylm_strict_small.yaml \\
+    python analysis/analyze_cka_comparison.py --config configs/babylm_strict_small.yaml \\
         --run LR_r8=outputs/babylm_strict_small/LR_r8 \\
         --run GaLore_proj8=outputs/babylm_strict_small/GaLore_proj8 \\
         --run ReLoRA_r8=outputs/babylm_strict_small/ReLoRA_r8 \\
@@ -42,6 +42,10 @@ Outputs:
     <results_dir>/cka_comparison_wide.csv     — wide-format, one column per run
     <results_dir>/fig_cka_comparison.png
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import pandas as pd
@@ -162,7 +166,7 @@ def main(args):
                '-', color='black', linewidth=2, label='FR_vs_FR (baseline)')
     ax.set_xlabel('Tokens seen', fontsize=10)
     ax.set_ylabel('Mean CKA vs FR', fontsize=10)
-    ax.set_title('Cross-run CKA vs FR — R2-W1 comparison', fontsize=10)
+    ax.set_title('Cross-run CKA vs FR', fontsize=10)
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(
         lambda x, _: f'{x/1e6:.0f}M' if x >= 1e6 else f'{x/1e3:.0f}K'))
     ax.legend(fontsize=8, loc='best')

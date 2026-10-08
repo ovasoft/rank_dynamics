@@ -8,8 +8,8 @@ Outputs:
   figures/aim4d_dsn_metric_vs_cka.png    — DSN: task metric vs final CKA (scatter)
 
 Usage:
-    python visualize_aim4.py
-    python visualize_aim4.py \
+    python analysis/visualization/visualize_aim4.py
+    python analysis/visualization/visualize_aim4.py \
         --vision   results/cifar10/aim4_dsn_cifar10.csv \
         --language results/babylm_strict_small/aim4_dsn_babylm_strict_small.csv \
         --out      figures/

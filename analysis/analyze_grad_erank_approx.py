@@ -24,7 +24,7 @@ to FR/LR_r{rank}/DSN_{mode}_r{rank} naming and to probe_gradient_erank.py's
 grad_erank.csv (a different file, computed by a different method).
 
 Usage:
-    python analyze_grad_erank_approx.py --config configs/babylm_strict_small.yaml \\
+    python analysis/analyze_grad_erank_approx.py --config configs/babylm_strict_small.yaml \\
         --run FR=outputs/babylm_strict_small/FR \\
         --run LR_r8=outputs/babylm_strict_small/LR_r8 \\
         --run GaLore_proj8=outputs/babylm_strict_small/GaLore_proj8 \\
@@ -41,6 +41,10 @@ Outputs:
                                                         per run, easy to eyeball
     <results_dir>/fig_grad_erank_approx_comparison.png
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import pandas as pd

@@ -25,6 +25,11 @@
 
 set -euo pipefail
 
+# Run from the repo root so relative config/output paths resolve, and make
+# the modules in src/, probing/ and analysis/ importable by name.
+cd "$(dirname "${BASH_SOURCE[0]}")"
+export PYTHONPATH="$PWD/src:$PWD/src/vision:$PWD/probing:$PWD/analysis${PYTHONPATH:+:$PYTHONPATH}"
+
 CONFIG="${1:-configs/cifar10.yaml}"
 STAGE_ONLY=""
 FROM_STAGE=0
@@ -105,6 +110,8 @@ skip_if_exists() {
     fi
     "$@"
 }
+# Stages run their commands in `bash -c` subshells, which need the function.
+export -f skip_if_exists
 
 # ── Stage 0: Validate ─────────────────────────────────────────────────────
 run_stage 0 "Validate config and environment" python3 -c "
@@ -121,39 +128,39 @@ print('  Config OK')
 run_stage 1 "Train FR + LR_r${RANK} (seed ${PRIMARY_SEED})" bash -c "
   skip_if_exists() { [[ -e \"\$1\" ]] && echo \"  [SKIP] \$1\" && return 0; shift; \"\$@\"; }
   skip_if_exists ${OUT}/FR/final/model.pt \
-    python3 train.py --config $CONFIG --run_type FR --seed $PRIMARY_SEED
+    python3 src/train.py --config $CONFIG --run_type FR --seed $PRIMARY_SEED
   skip_if_exists ${OUT}/LR_r${RANK}/final/model.pt \
-    python3 train.py --config $CONFIG --run_type LR --rank $RANK --seed $PRIMARY_SEED
+    python3 src/train.py --config $CONFIG --run_type LR --rank $RANK --seed $PRIMARY_SEED
 "
 
 # ── Stage 2: Probe FR and LR ─────────────────────────────────────────────
 run_stage 2 "Probe FR + LR_r${RANK}" bash -c "
   skip_if_exists ${OUT}/FR/probes/probes.csv \
-    python3 probe_dynamics.py --config $CONFIG \
+    python3 probing/probe_dynamics.py --config $CONFIG \
       --run_dir ${OUT}/FR --ref_run_dir ${OUT}/LR_r${RANK}
   skip_if_exists ${OUT}/LR_r${RANK}/probes/probes.csv \
-    python3 probe_dynamics.py --config $CONFIG \
+    python3 probing/probe_dynamics.py --config $CONFIG \
       --run_dir ${OUT}/LR_r${RANK} --ref_run_dir ${OUT}/FR
 "
 
 # ── Stage 3: Train baseline seeds ────────────────────────────────────────
 run_stage 3 "Train baseline seeds for CKA reference" bash -c "
   skip_if_exists ${OUT}/FR_seed1/final/model.pt \
-    python3 train.py --config $CONFIG --run_type FR --seed 1
+    python3 src/train.py --config $CONFIG --run_type FR --seed 1
   skip_if_exists ${OUT}/FR_seed2/final/model.pt \
-    python3 train.py --config $CONFIG --run_type FR --seed 2
+    python3 src/train.py --config $CONFIG --run_type FR --seed 2
   skip_if_exists ${OUT}/LR_r${RANK}_seed1/final/model.pt \
-    python3 train.py --config $CONFIG --run_type LR --rank $RANK --seed 1
+    python3 src/train.py --config $CONFIG --run_type LR --rank $RANK --seed 1
 "
 
 # ── Stage 4: Cross-run CKA baselines ─────────────────────────────────────
 run_stage 4 "Probe cross-run CKA baselines (FR-FR, LR-LR)" bash -c "
   skip_if_exists ${OUT}/FR_seed1/probes/cka_cross.csv \
-    python3 probe_dynamics.py --config $CONFIG \
+    python3 probing/probe_dynamics.py --config $CONFIG \
       --run_dir ${OUT}/FR_seed1 --ref_run_dir ${OUT}/FR_seed2
-  skip_if_exists ${OUT}/LR_r${RANK}/probes/cka_cross.csv \
-    python3 probe_dynamics.py --config $CONFIG \
-      --run_dir ${OUT}/LR_r${RANK} --ref_run_dir ${OUT}/LR_r${RANK}_seed1
+  skip_if_exists ${OUT}/LR_r${RANK}_seed1/probes/cka_cross.csv \
+    python3 probing/probe_dynamics.py --config $CONFIG \
+      --run_dir ${OUT}/LR_r${RANK}_seed1 --ref_run_dir ${OUT}/LR_r${RANK}
 "
 
 # ── Stage 5: Train DSN variants ───────────────────────────────────────────
@@ -161,7 +168,7 @@ run_stage 5 "Train DSN variants (${DSN_MODES[*]})" bash -c "
   for mode in ${DSN_MODES[*]}; do
     dir=${OUT}/LR_r${RANK}_dsn_\${mode}
     skip_if_exists \${dir}/final/model.pt \
-      python3 train_dsn.py --config $CONFIG --rank $RANK --dsn_mode \${mode}
+      python3 src/train_dsn.py --config $CONFIG --rank $RANK --dsn_mode \${mode}
   done
 "
 
@@ -170,7 +177,7 @@ run_stage 6 "Probe DSN variants" bash -c "
   for mode in ${DSN_MODES[*]}; do
     dir=${OUT}/LR_r${RANK}_dsn_\${mode}
     skip_if_exists \${dir}/probes/probes.csv \
-      python3 probe_dynamics.py --config $CONFIG \
+      python3 probing/probe_dynamics.py --config $CONFIG \
         --run_dir \${dir} --ref_run_dir ${OUT}/FR
   done
 "
@@ -178,15 +185,14 @@ run_stage 6 "Probe DSN variants" bash -c "
 # ── Stage 7: Epoch-1 intervention ────────────────────────────────────────
 run_stage 7 "Epoch-1 static intervention" bash -c "
   skip_if_exists ${OUT}/interventions/epoch1_intervention.csv \
-    python3 epoch1_intervention.py --config $CONFIG \
-      --fr_ckpt ${OUT}/FR/checkpoints/epoch_00/model.pt \
+    python3 src/epoch1_intervention.py --config $CONFIG \
       --out_dir ${OUT}/interventions
 "
 
 # ── Stage 8: Freeze-and-finetune ablation (10ep) ─────────────────────────
 run_stage 8 "Freeze-and-finetune ablation (10ep)" bash -c "
   skip_if_exists ${OUT}/ablation/ablation_results.csv \
-    python3 ablate_early_layers.py --config $CONFIG \
+    python3 src/ablate_early_layers.py --config $CONFIG \
       --lr_run_dir ${OUT}/LR_r${RANK} \
       --out_dir ${OUT}/ablation \
       --finetune_epochs 10
@@ -195,7 +201,7 @@ run_stage 8 "Freeze-and-finetune ablation (10ep)" bash -c "
 # ── Stage 9: Full finetune to convergence (30ep) ─────────────────────────
 run_stage 9 "Full finetune to convergence (30ep)" bash -c "
   skip_if_exists ${OUT}/ablation_convergence/ablation_results.csv \
-    python3 ablate_early_layers.py --config $CONFIG \
+    python3 src/ablate_early_layers.py --config $CONFIG \
       --lr_run_dir ${OUT}/LR_r${RANK} \
       --out_dir ${OUT}/ablation_convergence \
       --finetune_epochs 30 --finetune_only
@@ -207,16 +213,16 @@ run_stage 10 "Rank sweep (${ALL_RANKS[*]})" bash -c "
     [[ \"\$r\" == \"$RANK\" ]] && continue   # primary rank already done
     dir=${OUT}/LR_r\${r}
     skip_if_exists \${dir}/final/model.pt \
-      python3 train.py --config $CONFIG --run_type LR --rank \${r} --seed $PRIMARY_SEED
+      python3 src/train.py --config $CONFIG --run_type LR --rank \${r} --seed $PRIMARY_SEED
     skip_if_exists \${dir}/probes/probes.csv \
-      python3 probe_dynamics.py --config $CONFIG \
+      python3 probing/probe_dynamics.py --config $CONFIG \
         --run_dir \${dir} --ref_run_dir ${OUT}/FR
   done
 "
 
 # ── Stage 11: Collate ─────────────────────────────────────────────────────
 run_stage 11 "Collate all results" \
-  python3 collate_results.py --config $CONFIG \
+  python3 analysis/collate_results.py --config $CONFIG \
     --base_dir "$OUT" --out_dir "$RES"
 
 echo ""

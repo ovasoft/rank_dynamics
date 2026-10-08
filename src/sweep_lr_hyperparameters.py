@@ -1,16 +1,14 @@
 """
-sweep_lr_hyperparameters.py — LR-favorable hyperparameter sweep for R1-W3.
+sweep_lr_hyperparameters.py — LR-favorable hyperparameter sweep (paper
+§3.4, Appendix Table 3).
 
-R1-W3: "The comparison between FR and LR may be affected by fixed
-hyperparameters. Using the same AdamW setup for all ranks may disadvantage
-LR models. More tuning for LR learning rate, initialization scale, and
-optimizer settings is needed before attributing the gap mainly to rank
-constraints."
+Rules out the possibility that the FR-LR gap is an artefact of sharing one
+fixed AdamW setup between FR and LR.
 
 This script trains LR_r{rank} under a small grid of learning-rate
 multipliers and initialization-scale multipliers (relative to the paper's
 fixed baseline hyperparameters), under a REDUCED token budget (to keep the
-sweep tractable ahead of a rebuttal deadline), and reports final
+sweep tractable), and reports final
 validation perplexity for every configuration. The question this answers:
 does the FR-LR performance gap shrink substantially once LR's own
 hyperparameters are tuned in its favor, or does it persist regardless of
@@ -32,11 +30,15 @@ New in this file:
     and writes a summary CSV/table
 
 Usage:
-    python sweep_lr_hyperparameters.py --config configs/babylm_strict_small.yaml \\
+    python src/sweep_lr_hyperparameters.py --config configs/babylm_strict_small.yaml \\
         --rank 8 --sweep_token_budget 10000000 \\
         --lr_mults 0.5 1.0 2.0 3.0 \\
         --init_scale_mults 0.5 1.0 2.0
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, time, csv, argparse, random, itertools
 import torch
@@ -54,7 +56,7 @@ def rescale_lr_init_(model, init_scale_mult):
     In-place: rescale every LowRankLinear's A, B by sqrt(init_scale_mult),
     so the effective weight A @ B.T scales by init_scale_mult overall
     while its spectral SHAPE (relative singular value ratios) is
-    unchanged -- isolating "initialization scale" as the reviewer names
+    unchanged -- isolating "initialization scale" as its own factor
     it, distinct from rank or spectral shape.
     """
     if init_scale_mult == 1.0:

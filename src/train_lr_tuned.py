@@ -1,9 +1,9 @@
 """
 train_lr_tuned.py — Full-budget training of LR_r{rank} under the
-best-found hyperparameters from the R1-W3 sweep (sweep_lr_hyperparameters.py),
+best-found hyperparameters from the LR sweep (sweep_lr_hyperparameters.py),
 producing a properly checkpointed, probeable run.
 
-R1-W3 follow-up: sweep_lr_hyperparameters.py found that the paper's
+sweep_lr_hyperparameters.py found that the paper's
 original fixed hyperparameters (shared with FR) were substantially
 suboptimal for LR_r8 -- the best-found configuration (lr_mult=3.0,
 init_scale_mult=0.5 by default; override via --lr_mult/--init_scale_mult)
@@ -21,10 +21,14 @@ Reuses:
   - rescale_lr_init_                                (sweep_lr_hyperparameters.py)
 
 Usage:
-    python train_lr_tuned.py --config configs/babylm_strict_small.yaml \\
+    python src/train_lr_tuned.py --config configs/babylm_strict_small.yaml \\
         --rank 8 --lr_mult 3.0 --init_scale_mult 0.5 \\
         --run_dir outputs/babylm_strict_small/LR_r8_tuned
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, time, csv, argparse, random
 import torch
@@ -162,9 +166,9 @@ def main(args):
     log_file.close()
     print(f'\nDone. Best {metric_name}={best:.4f}')
     print(f"\nNext steps:")
-    print(f"  python probe_dynamics.py --config {args.config} \\")
+    print(f"  python probing/probe_dynamics.py --config {args.config} \\")
     print(f"      --run_dir {run_dir} --ref_run_dir <FR run dir>")
-    print(f"  python probe_gradient_erank.py --config {args.config} \\")
+    print(f"  python probing/probe_gradient_erank.py --config {args.config} \\")
     print(f"      --run_dir {run_dir}")
 
 

@@ -19,10 +19,14 @@ Reuses:
   - evaluate                              (train.py)
 
 Usage:
-    python verify_checkpoint_loading.py --config configs/babylm_strict_small.yaml \\
+    python probing/verify_checkpoint_loading.py --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/LR_r16 \\
         --checkpoint final
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import torch

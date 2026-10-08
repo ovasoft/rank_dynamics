@@ -1,9 +1,8 @@
 """
-train_galore.py — GaLore comparison for R2-W1 (Reviewer 2, Weakness 1).
+train_galore.py — GaLore comparison: gradient-projection with full-rank weights.
 
-R2-W1: "it seems this [gradient starvation] could just be restating the
-low-rank constraint rather than identifying a separate mechanism...
-compare against gradient-projection methods with full-rank weights."
+Tests whether gradient starvation is a separate mechanism or merely a
+restatement of the low-rank weight constraint.
 
 GaLore (Zhao et al. 2024) keeps weights FULL-RANK and instead projects
 GRADIENTS into a low-rank subspace before the optimizer update — the
@@ -27,9 +26,13 @@ Reuses:
 
 Usage:
     pip install galore-torch
-    python train_galore.py --config configs/babylm_strict_small.yaml \\
+    python src/train_galore.py --config configs/babylm_strict_small.yaml \\
         --rank 8 --update_proj_gap 200 --galore_scale 0.25
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, time, csv, argparse, random
 import torch

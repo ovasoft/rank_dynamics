@@ -18,10 +18,10 @@ report.txt                — Human-readable summary answering each objective
 Usage
 -----
     # Single domain
-    python collate_results.py --config configs/cifar10.yaml
+    python analysis/collate_results.py --config configs/cifar10.yaml
 
     # Cross-domain (pass both configs; outputs written to --out_dir)
-    python collate_results.py \\
+    python analysis/collate_results.py \\
         --config configs/cifar10.yaml \\
         --config2 configs/babylm_strict_small.yaml \\
         --out_dir results/cross_domain

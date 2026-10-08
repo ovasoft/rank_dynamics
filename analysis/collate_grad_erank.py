@@ -7,12 +7,12 @@ DSN runs and produce:
   3. Figure: gradient SVD distribution shapes (FR vs LR_r8 at early/late)
   4. Figure: gradient eRank under DSN vs FR vs LR
 
-These address:
-  R1-W6/Q3: Does DSN raise gradient eRank?
-  R3-W5/R4-W3: SVD distribution shape plots for FR vs LR gradient matrices
+These answer:
+  - Does DSN raise gradient eRank?
+  - What do the SVD distributions of FR vs LR gradient matrices look like?
 
 Usage:
-    python collate_grad_erank.py --config configs/babylm_strict_small.yaml
+    python analysis/collate_grad_erank.py --config configs/babylm_strict_small.yaml
 
 Expects probe_gradient_erank.py to have been run for all relevant run dirs:
     outputs/babylm_strict_small/FR/probes/grad_erank.csv
@@ -27,6 +27,10 @@ Outputs written to:
     results/babylm_strict_small/fig_grad_svd_distribution.png
     results/babylm_strict_small/fig_dsn_grad_erank.png
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse, math
 import pandas as pd
@@ -93,7 +97,7 @@ def plot_svd_distributions(fr_dir, lr_dir, output_path, rank=8):
     at early (first real checkpoint) and late (final checkpoint) training.
     Two rows (early/late) × two columns (FR/LR), log-scale y-axis.
 
-    This directly addresses R4-W3 and R3-W5: shows whether starvation is
+    Shows whether starvation is
     about a hard ceiling on the number of directions or a flatter distribution
     truncated at a low-rank horizon.
     """
@@ -332,7 +336,7 @@ def main(args):
         dsn_df.to_csv(dsn_csv, index=False)
         print(f"✓ DSN gradient eRank table: {dsn_csv}")
 
-        # Print summary for rebuttal
+        # Print summary
         print("\nGradient eRank at final checkpoint (mean across layers):")
         final_summary = dsn_df.groupby('run')['grad_erank'].last()
         for run, val in final_summary.items():

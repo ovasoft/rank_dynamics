@@ -6,8 +6,8 @@ instead of pasting a full grad_erank.csv (which has been failing to come
 through as an attachment).
 
 Usage:
-    python summarize_grad_erank.py outputs/babylm_strict_small/ReLoRA_r8
-    python summarize_grad_erank.py outputs/babylm_strict_small/LR_r8 --weight_filter attn
+    python analysis/summarize_grad_erank.py outputs/babylm_strict_small/ReLoRA_r8
+    python analysis/summarize_grad_erank.py outputs/babylm_strict_small/LR_r8 --weight_filter attn
 """
 
 import os, sys, argparse

@@ -1,9 +1,8 @@
 """
 probe_mutual_knn.py — Mutual k-nearest-neighbor representational alignment
-(Huh et al. 2024, "The Platonic Representation Hypothesis"), for R2-W3.
+(Huh et al. 2024, "The Platonic Representation Hypothesis"); paper Appendix J.1.
 
-The reviewer requested we check whether our findings hold under mutual
-kNN alignment, a different notion of representational similarity than
+Checks whether the CKA findings hold under mutual kNN alignment, a different notion of representational similarity than
 CKA: where CKA measures global linear-subspace correspondence between
 two representation spaces, mutual kNN measures whether two models agree
 on which points are near each other LOCALLY -- for each point, whether
@@ -27,11 +26,15 @@ New in this file:
     computation, writing mutual_knn_cross.csv instead
 
 Usage:
-    python probe_mutual_knn.py --config configs/babylm_strict_small.yaml \\
+    python probing/probe_mutual_knn.py --config configs/babylm_strict_small.yaml \\
         --run_dir outputs/babylm_strict_small/LR_r8 \\
         --ref_run_dir outputs/babylm_strict_small/FR \\
         --k 10
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse, csv
 import torch

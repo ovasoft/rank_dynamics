@@ -12,9 +12,13 @@ dataset-size-dependent "at what epoch", enabling direct comparison across
 datasets and model sizes.
 
 Usage:
-    python train.py --config configs/cifar10.yaml --run_type FR
-    python train.py --config configs/babylm_strict_small.yaml --run_type LR --rank 8
+    python src/train.py --config configs/cifar10.yaml --run_type FR
+    python src/train.py --config configs/babylm_strict_small.yaml --run_type LR --rank 8
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, math, time, csv, argparse, random, copy
 import torch
@@ -178,7 +182,7 @@ def train_token_budget_mode(model, train_loader, val_loader, device, loss_fn,
         f"Checkpoints at: [{ckpt_str}]")
 
     # ── Step-0 checkpoint: before any gradient update ─────────────────────
-    # Addresses reviewer request for zero-update CKA baseline.
+    # Zero-update baseline for step-0 CKA.
     # Saved as tokens_0000000000 so probe_dynamics.py sorts it first.
     step0_ckpt = os.path.join(run_dir, 'checkpoints', 'tokens_0000000000')
     if not os.path.exists(os.path.join(step0_ckpt, 'model.pt')):

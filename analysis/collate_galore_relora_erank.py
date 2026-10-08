@@ -1,6 +1,6 @@
 """
 collate_galore_relora_erank.py — Compare gradient eRank trajectories for
-GaLore and ReLoRA runs against the FR / LR_r8 baselines (R2-W1).
+GaLore and ReLoRA runs against the FR / LR_r8 baselines.
 
 collate_grad_erank.py's run discovery is hardcoded to 'FR', 'LR_r{rank}',
 and 'DSN_{mode}_r{primary_rank}' naming, so it has no path for GaLore or
@@ -8,7 +8,7 @@ ReLoRA run directories. Rather than modifying that file, this script
 reuses its two core functions directly and adds the GaLore/ReLoRA
 comparison on top.
 
-The discriminating question (R2-W1): GaLore keeps weights full-rank but
+The discriminating question: GaLore keeps weights full-rank but
 projects GRADIENTS to rank r; ReLoRA periodically merges a rank-r adapter
 back to full-rank. If either shows a gradient eRank trajectory closer to
 LR_r8's (flat, near its structural ceiling) than to FR's (expanding
@@ -23,7 +23,7 @@ Reuses:
   - load_config                                  (task_registry.py)
 
 Usage:
-    python collate_galore_relora_erank.py \\
+    python analysis/collate_galore_relora_erank.py \\
         --config configs/babylm_strict_small.yaml \\
         --galore_dir outputs/babylm_strict_small/GaLore_proj8 \\
         --relora_dir outputs/babylm_strict_small/ReLoRA_r8 \\
@@ -36,6 +36,10 @@ Outputs:
     results/babylm_strict_small/galore_relora_grad_erank.csv
     results/babylm_strict_small/fig_galore_relora_grad_erank.png
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import pandas as pd
@@ -123,7 +127,7 @@ def main(args):
     ax.set_xlabel('Tokens seen', fontsize=10)
     ax.set_ylabel('Mean gradient eRank', fontsize=10)
     ax.set_title(f'Gradient eRank: FR vs LR_r{rank} vs GaLore vs ReLoRA\n'
-                 f'(BabyLM Strict-Small / GPT-2) — R2-W1', fontsize=10)
+                 f'(BabyLM Strict-Small / GPT-2)', fontsize=10)
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(
         lambda x, _: f'{x/1e6:.0f}M' if x >= 1e6 else f'{x/1e3:.0f}K'))
     ax.legend(fontsize=8, loc='upper left')

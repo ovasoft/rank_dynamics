@@ -1,8 +1,9 @@
 """
-train_gradrank.py — Direct gradient effective-rank reduction for R2-W1.
+train_gradrank.py — Direct gradient effective-rank reduction (GradTrunc,
+paper §3.4).
 
-Neither reviewer specifically asked for GaLore; R2-W1's actual request was
-to "intervene on gradient dimensionality directly." GaLore does this
+The goal is to intervene on gradient dimensionality directly, with the
+weights left full-rank. GaLore does this
 indirectly, via low-rank projection inside the optimizer, periodic subspace
 rotation, and full-rank decoupled weight decay -- and the latter two turned
 out to confound the eRank measurement in this project's own GaLore ablation
@@ -59,9 +60,13 @@ New in this file:
     hardcodes plain AdamW with a single weight-decay value and no hook)
 
 Usage:
-    python train_gradrank.py --config configs/babylm_strict_small.yaml \\
+    python src/train_gradrank.py --config configs/babylm_strict_small.yaml \\
         --grad_rank 8
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, time, csv, argparse, random
 import torch

@@ -11,11 +11,11 @@ Similar datasets to CIFAR-10, in increasing order of difficulty/size:
   tiny_imagenet- 64x64 colour, 200 classes, 100k train (~10x CIFAR)
 
 Usage:
-    python train_cifar.py                         # CIFAR-10, full rank
-    python train_cifar.py --dataset cifar100
-    python train_cifar.py --rank 8                # low-rank r=8
-    python train_cifar.py --dataset cifar100 --rank 16
-    python train_cifar.py --debug                 # 100 steps
+    python src/vision/train_cifar.py                         # CIFAR-10, full rank
+    python src/vision/train_cifar.py --dataset cifar100
+    python src/vision/train_cifar.py --rank 8                # low-rank r=8
+    python src/vision/train_cifar.py --dataset cifar100 --rank 16
+    python src/vision/train_cifar.py --debug                 # 100 steps
 """
 
 import os, math, time, argparse, csv

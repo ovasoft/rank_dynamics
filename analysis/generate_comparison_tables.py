@@ -1,9 +1,9 @@
 """
-generate_rebuttal_tables.py — Generate rebuttal-ready markdown tables from
+generate_comparison_tables.py — Generate markdown comparison tables from
 existing probe outputs (grad_erank.csv, cka_cross.csv) across any set of
 named runs.
 
-Built to grow incrementally as more reviewer concerns are resolved: add a
+Built to grow incrementally: add a
 new --run NAME=PATH entry (and optionally a --grad_csv / --cka_csv override
 for irregular layouts) whenever a new experiment finishes, rather than
 hand-rebuilding comparison tables from scratch each time. Missing files for
@@ -14,7 +14,7 @@ Reuses the same checkpoint-token parsing convention as
 analyze_grad_erank_approx.py / analyze_cka_comparison.py.
 
 Usage:
-    python generate_rebuttal_tables.py \\
+    python analysis/generate_comparison_tables.py \\
         --run FR=outputs/babylm_strict_small/FR \\
         --run LR_r8=outputs/babylm_strict_small/LR_r8 \\
         --run ReLoRA_r8=outputs/babylm_strict_small/ReLoRA_r8 \\
@@ -24,7 +24,7 @@ Usage:
         --fr_fr_baseline outputs/babylm_strict_small/FR_seed1 \\
         --baseline FR \\
         --gap_reference LR_r8 \\
-        --out_dir rebuttal_tables
+        --out_dir results/comparison_tables
 
 Produces (in --out_dir):
     table1_grad_erank.md   — final-checkpoint true gradient eRank per run
@@ -202,5 +202,5 @@ if __name__ == '__main__':
     p.add_argument('--weight_filter', default='attn',
                   help="Substring filter on weight_name for grad_erank.csv "
                       "(default 'attn')")
-    p.add_argument('--out_dir', default='rebuttal_tables')
+    p.add_argument('--out_dir', default='results/comparison_tables')
     main(p.parse_args())

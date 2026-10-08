@@ -9,9 +9,9 @@ Outputs:
   figures/aim1e_frfr_trend.png
 
 Usage:
-    python visualize_aim1.py
-    python visualize_aim1.py --csv results/cross_domain/aim1_divergence_combined.csv
-    python visualize_aim1.py --out figures/
+    python analysis/visualization/visualize_aim1.py
+    python analysis/visualization/visualize_aim1.py --csv results/cross_domain/aim1_divergence_combined.csv
+    python analysis/visualization/visualize_aim1.py --out figures/
 """
 
 import argparse

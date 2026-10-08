@@ -4,11 +4,15 @@ save_step0_cka.py — Re-run step-0 CKA and write results to files.
 Outputs:
     results/babylm_strict_small/step0_cka.csv       — full per-rank per-seed per-layer
     results/babylm_strict_small/step0_cka_summary.csv — mean across layers, per rank/seed
-    results/babylm_strict_small/step0_cka_summary.txt — human-readable for rebuttal
+    results/babylm_strict_small/step0_cka_summary.txt — human-readable summary
 
 Usage:
-    python save_step0_cka.py --config configs/babylm_strict_small.yaml --seeds 0 1
+    python probing/save_step0_cka.py --config configs/babylm_strict_small.yaml --seeds 0 1
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse, csv, math
 import torch
@@ -162,7 +166,7 @@ def main(args):
         "",
         "Interpretation:",
         "  Split present at step 0 → due to initialisation statistics,",
-        "  not gradient dynamics. Resolves R1-W2, R2-W2, R4-Q1.",
+        "  not gradient dynamics.",
     ]
 
     txt = '\n'.join(summary_lines)

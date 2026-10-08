@@ -8,8 +8,8 @@ Outputs:
   figures/aim3d_erank_structural.png     — Structural eRank (weight matrix) vs grad eRank
 
 Usage:
-    python visualize_aim3.py
-    python visualize_aim3.py \
+    python analysis/visualization/visualize_aim3.py
+    python analysis/visualization/visualize_aim3.py \
         --vision   results/cifar10/aim3_grad_erank_cifar10.csv \
         --language results/babylm_strict_small/aim3_grad_erank_babylm_strict_small.csv \
         --out      figures/

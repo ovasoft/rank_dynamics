@@ -2,9 +2,9 @@
 resume_training_from_checkpoint.py — Continue training from an existing
 checkpoint under the normal AdamW token-budget schedule.
 
-R2-W2 follow-up: spectrum-matched init produces a step-0 CKA at parity
-with the FR-FR baseline (expected by construction -- confirms the init
-worked, doesn't yet answer the reviewer's actual question). The decisive
+Spectrum-matched init produces a step-0 CKA at parity with the FR-FR
+baseline (expected by construction -- confirms the init worked, but does
+not by itself say whether the advantage survives training). The decisive
 test is whether this parity persists through training or the split
 re-emerges once ordinary rank-8 gradient updates start flowing. This
 script resumes normal training from the spectrum-matched
@@ -32,12 +32,16 @@ Reuses:
   - get_lr_by_tokens, save_checkpoint, evaluate     (train.py)
 
 Usage:
-    python resume_training_from_checkpoint.py \\
+    python src/resume_training_from_checkpoint.py \\
         --config configs/babylm_strict_small.yaml \\
         --resume_from outputs/babylm_strict_small/LR_specmatch8/checkpoints/tokens_0000000000/model.pt \\
         --rank 8 \\
         --run_dir outputs/babylm_strict_small/LR_specmatch8
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, time, csv, argparse, random
 import torch

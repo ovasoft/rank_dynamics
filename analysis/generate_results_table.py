@@ -14,7 +14,7 @@ New in this file:
     within-run representational stability, independent of FR
 
 Usage:
-    python generate_results_table.py \\
+    python analysis/generate_results_table.py \\
         --blimp_summary results/babylm_strict_small/blimp_summary.csv \\
         --run FR=outputs/babylm_strict_small/FR \\
         --run LR_r8=outputs/babylm_strict_small/LR_r8 \\
@@ -35,6 +35,10 @@ Outputs:
     <out>.md     -- markdown version
     <out>.tex    -- LaTeX booktabs table
 """
+
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+_sys.path[:0] = [_os.path.join(_ROOT, d) for d in ('src', 'src/vision', 'probing', 'analysis')]
 
 import os, argparse
 import pandas as pd
